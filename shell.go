@@ -112,7 +112,6 @@ func NewShell(t keycardio.Transmitter) *Shell {
 
 	tplFuncs := &TemplateFuncs{s}
 	s.tplFuncMap = tplFuncs.FuncMap()
-
 	s.commands = map[string]shellCommand{
 		"echo":                          s.commandEcho,
 		"gp-send-apdu":                  s.commandGPSendAPDU,
@@ -136,6 +135,7 @@ func NewShell(t keycardio.Transmitter) *Shell {
 		"keycard-generate-key":          s.commandKeycardGenerateKey,
 		"keycard-remove-key":            s.commandKeycardRemoveKey,
 		"keycard-derive-key":            s.commandKeycardDeriveKey,
+		"keycard-export-key":            s.commandKeycardExportKey,
 		"keycard-sign":                  s.commandKeycardSign,
 		"keycard-sign-pinless":          s.commandKeycardSignPinless,
 		"keycard-sign-message-pinless":  s.commandKeycardSignMessagePinless,
@@ -154,15 +154,14 @@ func (s *Shell) flushOut() {
 }
 
 func (s *Shell) Run() error {
+	fmt.Println("Welcome to the KeyCard CLI Shell. Please type your commands and hit Enter:")
 	reader := bufio.NewReader(os.Stdin)
 	defer s.flushOut()
-
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			break
 		}
-
 		err = s.evalLine(line)
 		if err != nil {
 			return err
@@ -319,7 +318,6 @@ func (s *Shell) commandKeycardInit(args ...string) error {
 	if s.kCmdSet.ApplicationInfo.Initialized {
 		return errCardAlreadyInitialized
 	}
-
 	if s.Secrets == nil {
 		secrets, err := keycard.GenerateSecrets()
 		if err != nil {
@@ -348,9 +346,7 @@ func (s *Shell) commandKeycardSetSecrets(args ...string) error {
 	if err := s.requireArgs(args, 3); err != nil {
 		return err
 	}
-
 	s.Secrets = keycard.NewSecrets(args[0], args[1], args[2])
-
 	return nil
 }
 
@@ -400,8 +396,8 @@ func (s *Shell) commandKeycardPair(args ...string) error {
 		return err
 	}
 
-	s.write(fmt.Sprintf("PAIRING KEY: %x\n", s.kCmdSet.PairingInfo.Key))
-	s.write(fmt.Sprintf("PAIRING INDEX: %v\n\n", s.kCmdSet.PairingInfo.Index))
+	logger.Info(fmt.Sprintf("PAIRING KEY: %x\n", s.kCmdSet.PairingInfo.Key))
+	logger.Info(fmt.Sprintf("PAIRING INDEX: %v\n\n", s.kCmdSet.PairingInfo.Index))
 
 	return nil
 }
@@ -559,26 +555,22 @@ func (s *Shell) commandKeycardGenerateKey(args ...string) error {
 	if err := s.requireArgs(args, 0); err != nil {
 		return err
 	}
-
 	logger.Info("get status before generating key")
 	appStatus, err := s.kCmdSet.GetStatusApplication()
 	if err != nil {
 		logger.Error("get status failed", "error", err)
 		return err
 	}
-
 	if appStatus.KeyInitialized {
 		err = errors.New("key already generated. you must delete it before creating a new one")
 		logger.Error("generate key failed", "error", err)
 		return err
 	}
-
 	logger.Info("generate key")
 	keyUID, err := s.kCmdSet.GenerateKey()
 	if err != nil {
 		return err
 	}
-
 	s.write(fmt.Sprintf("KEY UID %x\n\n", keyUID))
 
 	return nil
@@ -609,6 +601,49 @@ func (s *Shell) commandKeycardDeriveKey(args ...string) error {
 	if err := s.kCmdSet.DeriveKey(args[0]); err != nil {
 		logger.Error("derive key failed", "error", err)
 		return err
+	}
+
+	return nil
+}
+
+func (s *Shell) commandKeycardExportKey(args ...string) error {
+	if err := s.requireArgs(args, 4); err != nil {
+		return err
+	}
+
+	derive, err := strconv.ParseBool(args[0])
+	if err != nil {
+		return err
+	}
+
+	makeCurrent, err := strconv.ParseBool(args[1])
+	if err != nil {
+		return err
+	}
+
+	onlyPublic, err := strconv.ParseBool(args[2])
+	if err != nil {
+		return err
+	}
+	
+	logger.Info(fmt.Sprintf("derive key %s", args[0]))
+	data, err := s.kCmdSet.ExportKey(derive, makeCurrent, onlyPublic, args[3])
+	// Data format:
+	// [ 0xA1, 0x?, 0x80/81, 0x?, <payload> ]
+	// Alex: I'm not sure what bytes 1 and 3 are. They are 0x43 and 0x41, respectively,
+	// 		but I can't find these defined in the docs. They appear to just be placehodlers.
+	//		Maybe the keycard applet authors can clarify?
+	if err != nil {
+		return err
+	} else if (data[0] != 0xA1) || (data[2] != 0x80 && data[2] != 0x81) {
+		return errors.New("Incorrect response format")
+	}
+	if data[2] == 0x80 {
+		// Public Key
+		logger.Info(fmt.Sprintf("Exported Public Key: \n%x\n", data[4:]))
+	} else {
+		// Key Pair
+		logger.Info(fmt.Sprintf("Exported Key Pair: \n%x\n", data[4:]))
 	}
 
 	return nil
