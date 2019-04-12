@@ -136,6 +136,7 @@ func NewShell(t keycardio.Transmitter) *Shell {
 		"keycard-remove-key":            s.commandKeycardRemoveKey,
 		"keycard-derive-key":            s.commandKeycardDeriveKey,
 		"keycard-export-key":            s.commandKeycardExportKey,
+		"keycard-export-seed":           s.commandKeycardExportSeed,
 		"keycard-sign":                  s.commandKeycardSign,
 		"keycard-sign-pinless":          s.commandKeycardSignPinless,
 		"keycard-sign-message-pinless":  s.commandKeycardSignMessagePinless,
@@ -646,6 +647,18 @@ func (s *Shell) commandKeycardExportKey(args ...string) error {
 		logger.Info(fmt.Sprintf("Exported Key Pair: \n%x\n", data[4:]))
 	}
 
+	return nil
+}
+
+func (s *Shell) commandKeycardExportSeed(args ...string) error {
+	if err := s.requireArgs(args, 0); err != nil {
+		return err
+	}
+	data, err := s.kCmdSet.ExportSeed()
+	logger.Info(fmt.Sprintf("Exported Seed: \n%x\n", data))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
