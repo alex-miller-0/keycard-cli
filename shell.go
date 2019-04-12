@@ -133,6 +133,7 @@ func NewShell(t keycardio.Transmitter) *Shell {
 		"keycard-change-puk":            s.commandKeycardChangePUK,
 		"keycard-change-pairing-secret": s.commandKeycardChangePairingSecret,
 		"keycard-generate-key":          s.commandKeycardGenerateKey,
+		"keycard-load-key":              s.commandKeycardLoadKey,
 		"keycard-remove-key":            s.commandKeycardRemoveKey,
 		"keycard-derive-key":            s.commandKeycardDeriveKey,
 		"keycard-export-key":            s.commandKeycardExportKey,
@@ -556,7 +557,6 @@ func (s *Shell) commandKeycardGenerateKey(args ...string) error {
 	if err := s.requireArgs(args, 0); err != nil {
 		return err
 	}
-	logger.Info("get status before generating key")
 	appStatus, err := s.kCmdSet.GetStatusApplication()
 	if err != nil {
 		logger.Error("get status failed", "error", err)
@@ -574,6 +574,28 @@ func (s *Shell) commandKeycardGenerateKey(args ...string) error {
 	}
 	s.write(fmt.Sprintf("KEY UID %x\n\n", keyUID))
 
+	return nil
+}
+
+func (s *Shell) commandKeycardLoadKey(args ...string) error {
+	if err := s.requireArgs(args, 3); err != nil {
+		return err
+	}
+	isSeed, err := strconv.ParseBool(args[0])
+	if err != nil {
+		return err
+	}
+	isExtended, err := strconv.ParseBool(args[1])
+	if err != nil {
+		return err
+	}
+	keyBuf, err := hex.DecodeString(args[2])
+	if err != nil {
+		return err
+	}
+	if err := s.kCmdSet.LoadKey(isSeed, isExtended, keyBuf); err != nil {
+		return err
+	}
 	return nil
 }
 

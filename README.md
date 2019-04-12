@@ -115,15 +115,30 @@ If you don't get an error message, it means you are connected to the card! This 
 
 ### Wallets
 
-Once comms are established with the card, you should generate a keypair on the card if you haven't done so already:
+Once you have verified your PIN, you can create, import, and interact with your HD wallet. The keycard stores one seed (and thus one HD wallet) at a time.
+
+#### Generating a Key
+
+You can generate a key using the TRNG of the smartcard:
 
 ```
 > keycard-generate-key
 ```
 
-This will create a keypair that does not correspond to a mnemonic, so you cannot export it as a seed phrase. The generation utilizes the card's true random number generator.
+This will create and load a seed (and master keypair) that does not correspond to a mnemonic, so you cannot export it as a seed phrase. The generation utilizes the card's true random number generator.
 
-> The KeyCard applet does have the ability to import a key with a menomonic, but that isn't as secure as generating on the card. It is also not implemented in this CLI or in the Golang SDK yet.
+##### Importing a Key or Seed
+
+You can also import a seed or key:
+
+```
+> keycard-load-key <isSeed> <isExtended> <data>
+```
+
+If `isSeed=1`, your `data` should be a 64-byte hex string representing the master seed for the HD wallet you are creating.
+
+> See `status-keycard` docs for formatting when `isSeed=0`. You should be including a keypair with an optional chaincode to indicate whether it is an extended keypair (`isExtended=1` for extended keypair imports). Importing keys directly is generally not recommended, as the data is less compact.
+
 
 #### Setting a "Current" Key
 
