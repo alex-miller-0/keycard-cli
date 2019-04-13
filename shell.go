@@ -122,6 +122,8 @@ func NewShell(t keycardio.Transmitter) *Shell {
 		"gp-install-for-install":        s.commandGPInstallForInstall,
 		"keycard-init":                  s.commandKeycardInit,
 		"keycard-select":                s.commandKeycardSelect,
+		"keycard-load-certs":            s.commandKeycardLoadCerts,
+		"keycard-export-certs":          s.commandKeycardExportCerts,
 		"keycard-pair":                  s.commandKeycardPair,
 		"keycard-unpair":                s.commandKeycardUnpair,
 		"keycard-open-secure-channel":   s.commandKeycardOpenSecureChannel,
@@ -349,6 +351,33 @@ func (s *Shell) commandKeycardSetSecrets(args ...string) error {
 		return err
 	}
 	s.Secrets = keycard.NewSecrets(args[0], args[1], args[2])
+	return nil
+}
+
+func (s *Shell) commandKeycardLoadCerts(args ...string) error {
+	if err := s.requireArgs(args, 1); err != nil {
+		return err
+	}
+	certs, err := hex.DecodeString(args[0])
+	if err != nil {
+		return err
+	}
+	err = s.kCmdSet.LoadCerts(certs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Shell) commandKeycardExportCerts(args ...string) error {
+	if err := s.requireArgs(args, 0); err != nil {
+		return err
+	}
+	certs, err := s.kCmdSet.ExportCerts()
+	if err != nil {
+		return err
+	}
+	logger.Info(fmt.Sprintf("Certs:\n%x\n", certs))
 	return nil
 }
 
