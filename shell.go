@@ -583,9 +583,9 @@ func (s *Shell) commandKeycardChangePairingSecret(args ...string) error {
 }
 
 func (s *Shell) commandKeycardGenerateKey(args ...string) error {
-	if err := s.requireArgs(args, 0); err != nil {
-		return err
-	}
+	// if err := s.requireArgs(args, 1); err != nil {
+	// 	return err
+	// }
 	appStatus, err := s.kCmdSet.GetStatusApplication()
 	if err != nil {
 		logger.Error("get status failed", "error", err)
@@ -596,8 +596,12 @@ func (s *Shell) commandKeycardGenerateKey(args ...string) error {
 		logger.Error("generate key failed", "error", err)
 		return err
 	}
-	logger.Info("generate key")
-	keyUID, err := s.kCmdSet.GenerateKey()
+	p1 := uint8(0)
+	if (len(args) > 0) {
+		_p1, _ := (strconv.ParseUint(args[0], 10, 8))
+		p1 = uint8(_p1)
+	}
+	keyUID, err := s.kCmdSet.GenerateKey(p1)
 	if err != nil {
 		return err
 	}
@@ -610,19 +614,16 @@ func (s *Shell) commandKeycardLoadKey(args ...string) error {
 	if err := s.requireArgs(args, 3); err != nil {
 		return err
 	}
-	isSeed, err := strconv.ParseBool(args[0])
-	if err != nil {
-		return err
-	}
-	isExtended, err := strconv.ParseBool(args[1])
-	if err != nil {
-		return err
-	}
+	_p1, _ := (strconv.ParseUint(args[0], 10, 8))
+	_p2, _ := (strconv.ParseUint(args[1], 10, 8))
+	p1 := uint8(_p1)
+	p2 := uint8(_p2)
+
 	keyBuf, err := hex.DecodeString(args[2])
 	if err != nil {
 		return err
 	}
-	if err := s.kCmdSet.LoadKey(isSeed, isExtended, keyBuf); err != nil {
+	if err := s.kCmdSet.LoadKey(p1, p2, keyBuf); err != nil {
 		return err
 	}
 	return nil

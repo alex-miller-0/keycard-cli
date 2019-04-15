@@ -175,6 +175,36 @@ Example:
 
 Where `RESPONSE_KEY` is an EC public key on the secp256k1 curve in uncompressed point format, i.e. `04{X-component}{Y-component}`.
 
+#### Master Seed
+
+The `masterSeed` contains the root entropy of the HD wallet. The seed may be exported if it is created/imported using an appropriate flag.
+
+> A `flag` is a one-byte value. Currently the only allowable valures are 0 (non-exportable seed) and 1 (exportable seed), but more options may be added in the future.
+
+**Generating a seed:**
+
+```
+> keycard-generate-key <flag>
+```
+
+If the second argument is not provided, this will generate a `masterSeed` which is *not* exportable. You may designate the seed as exportable with `keycard-generate-key 1`.
+
+**Importing a Seed:**
+
+```
+> keycard-load-key 3 <flag> <seed>
+```
+
+Here the `3` indicates that we are loading a seed (64 byte hex string). The `flag` is the same as for generating: 1=exportable, 0=non-exportable.
+
+**Exporting seed:**
+
+You can export the master seed (if it is exportable) with the following command:
+
+```
+> keycard-export-seed
+```
+
 #### Signing
 
 TODO
