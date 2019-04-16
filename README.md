@@ -158,22 +158,39 @@ You can export both public and private keys based on a derivation path (or witho
 
 > Public keys can always be exported, but private keys have some restrictions, which you can read about [here].
 
-When exporting a key, you have three parameters to specify:
+When exporting a key, you have two parameters (`p1` and `p2`) to specify:
 
-* `derive` - if false, the card will just return the current key. This means you must have derived (i.e. made current) the key ahead of time
-* `makeCurrent` - if true, the card will make the derived key "current" before returning it
-* `onlyPublic` - If true, only return the f false, return the private and public key (again, there are restrictions)
-* `path` - Derivation path
+* `p1` - Derivation options
+* `p2` - Type of data export
+
+**`p1`**
+|  Option    |   Description            |
+|:-----------|:-------------------------|
+| `0`     | Export Current Key       |
+| `1`     | Derive                   |
+| `2`     | Derive and make current key |
+
+**`p2`**
+
+|  Option    |   Description                          |
+|:-----------|:---------------------------------------|
+| `0`        | Export public AND private key          |
+| `1`        | Export public key                      |
+| `2`        | Export public key and chaincode        |
+
+
+> **IMPORTANT NOTE**: GridPlus has disabled private key exports, while status does not allow chaincode exports
 
 Example:
 
 ```
-> keycard-export-key 1 0 0 m/44'/0'/0'/0/0
+> keycard-export-key 2 2 m/44'/0'/0'/0/0
 
-<RESPONSE_KEY>
+Exorted Public Key: <PUB_KEY>
+Exported Chain Code: <CHAIN_CODE>
 ```
 
-Where `RESPONSE_KEY` is an EC public key on the secp256k1 curve in uncompressed point format, i.e. `04{X-component}{Y-component}`.
+> All public keys are build on the secp256k1 curve and exported in uncompressed point format, i.e. `04{X-component}{Y-component}`.
 
 #### Master Seed
 

@@ -660,27 +660,17 @@ func (s *Shell) commandKeycardDeriveKey(args ...string) error {
 }
 
 func (s *Shell) commandKeycardExportKey(args ...string) error {
-	if err := s.requireArgs(args, 4); err != nil {
+	if err := s.requireArgs(args, 3); err != nil {
 		return err
 	}
 
-	derive, err := strconv.ParseBool(args[0])
-	if err != nil {
-		return err
-	}
-
-	makeCurrent, err := strconv.ParseBool(args[1])
-	if err != nil {
-		return err
-	}
-
-	onlyPublic, err := strconv.ParseBool(args[2])
-	if err != nil {
-		return err
-	}
+	_p1, _ := strconv.ParseUint(args[0], 10 ,8)
+	p1 := uint8(_p1)
+	_p2, _ := strconv.ParseUint(args[1], 10, 8)
+	p2 := uint8(_p2)
 	
 	logger.Info(fmt.Sprintf("derive key %s", args[0]))
-	data, err := s.kCmdSet.ExportKey(derive, makeCurrent, onlyPublic, args[3])
+	data, err := s.kCmdSet.ExportKey(p1, p2, args[2])
 	// Data format:
 	// [ 0xA1, 0x?, 0x80/81, 0x?, <payload> ]
 	// Alex: I'm not sure what bytes 1 and 3 are. They are 0x43 and 0x41, respectively,
@@ -693,10 +683,13 @@ func (s *Shell) commandKeycardExportKey(args ...string) error {
 	}
 	if data[2] == 0x80 {
 		// Public Key
-		logger.Info(fmt.Sprintf("Exported Public Key: \n%x\n", data[4:]))
+		logger.Info(fmt.Sprintf("Exported Public Key: \n%x\n", data[4:4+65]))
 	} else {
 		// Key Pair
 		logger.Info(fmt.Sprintf("Exported Key Pair: \n%x\n", data[4:]))
+	}
+	if len(data) > (4+65) && data[4+65] == 0x82 {
+		logger.Info(fmt.Sprintf("Exported Chain Code: \n%x\n", data[4+67:]))
 	}
 
 	return nil
