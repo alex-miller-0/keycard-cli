@@ -15,11 +15,11 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	keycard "github.com/status-im/keycard-go"
-	"github.com/status-im/keycard-go/apdu"
-	"github.com/status-im/keycard-go/globalplatform"
-	keycardio "github.com/status-im/keycard-go/io"
-	"github.com/status-im/keycard-go/types"
+	keycard "github.com/alex-miller-0/keycard-go"
+	"github.com/alex-miller-0/keycard-go/apdu"
+	"github.com/alex-miller-0/keycard-go/globalplatform"
+	keycardio "github.com/alex-miller-0/keycard-go/io"
+	"github.com/alex-miller-0/keycard-go/types"
 )
 
 type shellCommand = func(args ...string) error
@@ -122,8 +122,8 @@ func NewShell(t keycardio.Transmitter) *Shell {
 		"gp-install-for-install":        s.commandGPInstallForInstall,
 		"keycard-init":                  s.commandKeycardInit,
 		"keycard-select":                s.commandKeycardSelect,
-		"keycard-load-certs":            s.commandKeycardLoadCerts,
-		"keycard-export-certs":          s.commandKeycardExportCerts,
+		// "keycard-load-certs":            s.commandKeycardLoadCerts,
+		// "keycard-export-certs":          s.commandKeycardExportCerts,
 		"keycard-pair":                  s.commandKeycardPair,
 		"keycard-unpair":                s.commandKeycardUnpair,
 		"keycard-open-secure-channel":   s.commandKeycardOpenSecureChannel,
@@ -135,11 +135,11 @@ func NewShell(t keycardio.Transmitter) *Shell {
 		"keycard-change-puk":            s.commandKeycardChangePUK,
 		"keycard-change-pairing-secret": s.commandKeycardChangePairingSecret,
 		"keycard-generate-key":          s.commandKeycardGenerateKey,
-		"keycard-load-key":              s.commandKeycardLoadKey,
+		// "keycard-load-key":              s.commandKeycardLoadKey,
 		"keycard-remove-key":            s.commandKeycardRemoveKey,
 		"keycard-derive-key":            s.commandKeycardDeriveKey,
-		"keycard-export-key":            s.commandKeycardExportKey,
-		"keycard-export-seed":           s.commandKeycardExportSeed,
+		// "keycard-export-key":            s.commandKeycardExportKey,
+		// "keycard-export-seed":           s.commandKeycardExportSeed,
 		"keycard-sign":                  s.commandKeycardSign,
 		"keycard-sign-pinless":          s.commandKeycardSignPinless,
 		"keycard-sign-message-pinless":  s.commandKeycardSignMessagePinless,
@@ -353,7 +353,7 @@ func (s *Shell) commandKeycardSetSecrets(args ...string) error {
 	s.Secrets = keycard.NewSecrets(args[0], args[1], args[2])
 	return nil
 }
-
+/*
 func (s *Shell) commandKeycardLoadCerts(args ...string) error {
 	if err := s.requireArgs(args, 1); err != nil {
 		return err
@@ -380,7 +380,7 @@ func (s *Shell) commandKeycardExportCerts(args ...string) error {
 	logger.Info(fmt.Sprintf("Certs:\n%x\n", certs))
 	return nil
 }
-
+*/
 func (s *Shell) commandKeycardSelect(args ...string) error {
 	if err := s.requireArgs(args, 0); err != nil {
 		return err
@@ -609,7 +609,7 @@ func (s *Shell) commandKeycardGenerateKey(args ...string) error {
 
 	return nil
 }
-
+/*
 func (s *Shell) commandKeycardLoadKey(args ...string) error {
 	if err := s.requireArgs(args, 3); err != nil {
 		return err
@@ -628,7 +628,7 @@ func (s *Shell) commandKeycardLoadKey(args ...string) error {
 	}
 	return nil
 }
-
+*/
 func (s *Shell) commandKeycardRemoveKey(args ...string) error {
 	if err := s.requireArgs(args, 0); err != nil {
 		return err
@@ -658,7 +658,7 @@ func (s *Shell) commandKeycardDeriveKey(args ...string) error {
 
 	return nil
 }
-
+/*
 func (s *Shell) commandKeycardExportKey(args ...string) error {
 	if err := s.requireArgs(args, 3); err != nil {
 		return err
@@ -694,7 +694,8 @@ func (s *Shell) commandKeycardExportKey(args ...string) error {
 
 	return nil
 }
-
+*/
+/*
 func (s *Shell) commandKeycardExportSeed(args ...string) error {
 	if err := s.requireArgs(args, 0); err != nil {
 		return err
@@ -706,7 +707,7 @@ func (s *Shell) commandKeycardExportSeed(args ...string) error {
 	}
 	return nil
 }
-
+*/
 func (s *Shell) commandKeycardSign(args ...string) error {
 	if err := s.requireArgs(args, 1); err != nil {
 		return err
@@ -724,7 +725,7 @@ func (s *Shell) commandKeycardSign(args ...string) error {
 		logger.Error("sign failed", "error", err)
 		return err
 	}
-
+	logger.Info(fmt.Sprintf("signature %x", sig))
 	s.writeSignatureInfo(sig)
 
 	return nil
@@ -857,10 +858,10 @@ func (s *Shell) writeSignatureInfo(sig *types.Signature) {
 
 	address := crypto.PubkeyToAddress(*ecdsaPubKey)
 
-	s.write(fmt.Sprintf("SIGNATURE R: %x\n", sig.R()))
-	s.write(fmt.Sprintf("SIGNATURE S: %x\n", sig.S()))
-	s.write(fmt.Sprintf("SIGNATURE V: %x\n", sig.V()))
-	s.write(fmt.Sprintf("ETH SIGNATURE: 0x%x\n", ethSig))
-	s.write(fmt.Sprintf("PUBLIC KEY: 0x%x\n", sig.PubKey()))
-	s.write(fmt.Sprintf("ADDRESS: 0x%x\n\n", address))
+	logger.Info(fmt.Sprintf("SIGNATURE R: %x\n", sig.R()))
+	logger.Info(fmt.Sprintf("SIGNATURE S: %x\n", sig.S()))
+	logger.Info(fmt.Sprintf("SIGNATURE V: %x\n", sig.V()))
+	logger.Info(fmt.Sprintf("ETH SIGNATURE: 0x%x\n", ethSig))
+	logger.Info(fmt.Sprintf("PUBLIC KEY: 0x%x\n", sig.PubKey()))
+	logger.Info(fmt.Sprintf("ADDRESS: 0x%x\n\n", address))
 }

@@ -6,12 +6,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/status-im/keycard-go/apdu"
-	"github.com/status-im/keycard-go/globalplatform"
-	"github.com/status-im/keycard-go/hexutils"
-	"github.com/status-im/keycard-go/identifiers"
-	keycardio "github.com/status-im/keycard-go/io"
-	"github.com/status-im/keycard-go/types"
+	"github.com/alex-miller-0/keycard-go/apdu"
+	"github.com/alex-miller-0/keycard-go/globalplatform"
+	"github.com/alex-miller-0/keycard-go/hexutils"
+	"github.com/alex-miller-0/keycard-go/identifiers"
+	keycardio "github.com/alex-miller-0/keycard-go/io"
+	"github.com/alex-miller-0/keycard-go/types"
 )
 
 var (
