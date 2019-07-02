@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"flag"
@@ -47,6 +48,8 @@ func initLogger() {
 
 func init() {
 	commands = map[string]commandFunc{
+		"get-id":  commandGetId,
+		"certify": commandCertify,
 		"version": commandVersion,
 		"install": commandInstall,
 		"info":    commandInfo,
@@ -238,6 +241,7 @@ func commandInfo(card *scard.Card) error {
 
 	fmt.Printf("Installed: %+v\n", info.Installed)
 	fmt.Printf("Initialized: %+v\n", info.Initialized)
+	fmt.Printf("Seed Exportable: %+v\n", info.SeedExportable)
 	fmt.Printf("InstanceUID: 0x%x\n", info.InstanceUID)
 	fmt.Printf("SecureChannelPublicKey: 0x%x\n", info.SecureChannelPublicKey)
 	fmt.Printf("Version: 0x%x\n", info.Version)
@@ -248,6 +252,48 @@ func commandInfo(card *scard.Card) error {
 	fmt.Printf("  Key management:%v\n", info.HasKeyManagementCapability())
 	fmt.Printf("  Credentials Management:%v\n", info.HasCredentialsManagementCapability())
 	fmt.Printf("  NDEF:%v\n", info.HasNDEFCapability())
+
+	return nil
+}
+
+func commandGetId(card *scard.Card) error {
+	fmt.Printf("len(os.args) %d\n", len(os.Args))
+	fmt.Printf("arg %s\n", os.Args[len(os.Args) - 1])
+	c := NewCertifier(card)
+	idPub, err := c.GetId()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Card ID (PubKey): %x\n", idPub)
+	return nil
+}
+
+func commandCertify(card *scard.Card) error {
+	if len(os.Args) < 3 {
+		return errors.New("You must provide a cert")
+	}
+	cert, err := hex.DecodeString(os.Args[len(os.Args) - 1])
+	if err != nil {
+		return err
+	} else if len(cert) != 64 {
+		// This must be an [r,s] ECDSA signature
+		return errors.New("Your cert must be a 64 byte hex string")
+	}
+	fmt.Printf("Putting cert %v\n", cert)
+	// Push cert to card
+	c := NewCertifier(card)
+	err = c.PutCert(cert)
+	if err != nil {
+		return err
+	}
+	// Ensure the cert was loaded
+	data, err := c.GetCert()
+	if err != nil {
+		return err
+	} else if !bytes.Equal(data, cert) {
+		return errors.New("Cert not propertly loaded to card")
+	}
 
 	return nil
 }
