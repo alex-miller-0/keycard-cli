@@ -2,12 +2,11 @@ package main
 
 import (
 	"errors"
-
-	keycard "github.com/status-im/keycard-go"
-	"github.com/status-im/keycard-go/apdu"
-	"github.com/status-im/keycard-go/globalplatform"
-	"github.com/status-im/keycard-go/io"
-	"github.com/status-im/keycard-go/types"
+	keycard "github.com/alex-miller-0/keycard-go"
+	"github.com/alex-miller-0/keycard-go/apdu"
+	"github.com/alex-miller-0/keycard-go/globalplatform"
+	"github.com/alex-miller-0/keycard-go/io"
+	"github.com/alex-miller-0/keycard-go/types"
 )
 
 var (

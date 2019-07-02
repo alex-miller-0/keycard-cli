@@ -15,11 +15,11 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	keycard "github.com/status-im/keycard-go"
-	"github.com/status-im/keycard-go/apdu"
-	"github.com/status-im/keycard-go/globalplatform"
-	keycardio "github.com/status-im/keycard-go/io"
-	"github.com/status-im/keycard-go/types"
+	keycard "github.com/alex-miller-0/keycard-go"
+	"github.com/alex-miller-0/keycard-go/apdu"
+	"github.com/alex-miller-0/keycard-go/globalplatform"
+	keycardio "github.com/alex-miller-0/keycard-go/io"
+	"github.com/alex-miller-0/keycard-go/types"
 )
 
 type shellCommand = func(args ...string) error
@@ -122,6 +122,8 @@ func NewShell(t keycardio.Transmitter) *Shell {
 		"gp-install-for-install":        s.commandGPInstallForInstall,
 		"keycard-init":                  s.commandKeycardInit,
 		"keycard-select":                s.commandKeycardSelect,
+		// "keycard-load-certs":            s.commandKeycardLoadCerts,
+		// "keycard-export-certs":          s.commandKeycardExportCerts,
 		"keycard-pair":                  s.commandKeycardPair,
 		"keycard-unpair":                s.commandKeycardUnpair,
 		"keycard-open-secure-channel":   s.commandKeycardOpenSecureChannel,
@@ -133,9 +135,11 @@ func NewShell(t keycardio.Transmitter) *Shell {
 		"keycard-change-puk":            s.commandKeycardChangePUK,
 		"keycard-change-pairing-secret": s.commandKeycardChangePairingSecret,
 		"keycard-generate-key":          s.commandKeycardGenerateKey,
+		// "keycard-load-key":              s.commandKeycardLoadKey,
 		"keycard-remove-key":            s.commandKeycardRemoveKey,
 		"keycard-derive-key":            s.commandKeycardDeriveKey,
-		"keycard-export-key":            s.commandKeycardExportKey,
+		// "keycard-export-key":            s.commandKeycardExportKey,
+		// "keycard-export-seed":           s.commandKeycardExportSeed,
 		"keycard-sign":                  s.commandKeycardSign,
 		"keycard-sign-pinless":          s.commandKeycardSignPinless,
 		"keycard-sign-message-pinless":  s.commandKeycardSignMessagePinless,
@@ -349,7 +353,34 @@ func (s *Shell) commandKeycardSetSecrets(args ...string) error {
 	s.Secrets = keycard.NewSecrets(args[0], args[1], args[2])
 	return nil
 }
+/*
+func (s *Shell) commandKeycardLoadCerts(args ...string) error {
+	if err := s.requireArgs(args, 1); err != nil {
+		return err
+	}
+	certs, err := hex.DecodeString(args[0])
+	if err != nil {
+		return err
+	}
+	err = s.kCmdSet.LoadCerts(certs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+func (s *Shell) commandKeycardExportCerts(args ...string) error {
+	if err := s.requireArgs(args, 0); err != nil {
+		return err
+	}
+	certs, err := s.kCmdSet.ExportCerts()
+	if err != nil {
+		return err
+	}
+	logger.Info(fmt.Sprintf("Certs:\n%x\n", certs))
+	return nil
+}
+*/
 func (s *Shell) commandKeycardSelect(args ...string) error {
 	if err := s.requireArgs(args, 0); err != nil {
 		return err
@@ -552,10 +583,9 @@ func (s *Shell) commandKeycardChangePairingSecret(args ...string) error {
 }
 
 func (s *Shell) commandKeycardGenerateKey(args ...string) error {
-	if err := s.requireArgs(args, 0); err != nil {
-		return err
-	}
-	logger.Info("get status before generating key")
+	// if err := s.requireArgs(args, 1); err != nil {
+	// 	return err
+	// }
 	appStatus, err := s.kCmdSet.GetStatusApplication()
 	if err != nil {
 		logger.Error("get status failed", "error", err)
@@ -566,8 +596,12 @@ func (s *Shell) commandKeycardGenerateKey(args ...string) error {
 		logger.Error("generate key failed", "error", err)
 		return err
 	}
-	logger.Info("generate key")
-	keyUID, err := s.kCmdSet.GenerateKey()
+	p1 := uint8(0)
+	if (len(args) > 0) {
+		_p1, _ := (strconv.ParseUint(args[0], 10, 8))
+		p1 = uint8(_p1)
+	}
+	keyUID, err := s.kCmdSet.GenerateKey(p1)
 	if err != nil {
 		return err
 	}
@@ -575,7 +609,26 @@ func (s *Shell) commandKeycardGenerateKey(args ...string) error {
 
 	return nil
 }
+/*
+func (s *Shell) commandKeycardLoadKey(args ...string) error {
+	if err := s.requireArgs(args, 3); err != nil {
+		return err
+	}
+	_p1, _ := (strconv.ParseUint(args[0], 10, 8))
+	_p2, _ := (strconv.ParseUint(args[1], 10, 8))
+	p1 := uint8(_p1)
+	p2 := uint8(_p2)
 
+	keyBuf, err := hex.DecodeString(args[2])
+	if err != nil {
+		return err
+	}
+	if err := s.kCmdSet.LoadKey(p1, p2, keyBuf); err != nil {
+		return err
+	}
+	return nil
+}
+*/
 func (s *Shell) commandKeycardRemoveKey(args ...string) error {
 	if err := s.requireArgs(args, 0); err != nil {
 		return err
@@ -605,29 +658,19 @@ func (s *Shell) commandKeycardDeriveKey(args ...string) error {
 
 	return nil
 }
-
+/*
 func (s *Shell) commandKeycardExportKey(args ...string) error {
-	if err := s.requireArgs(args, 4); err != nil {
+	if err := s.requireArgs(args, 3); err != nil {
 		return err
 	}
 
-	derive, err := strconv.ParseBool(args[0])
-	if err != nil {
-		return err
-	}
-
-	makeCurrent, err := strconv.ParseBool(args[1])
-	if err != nil {
-		return err
-	}
-
-	onlyPublic, err := strconv.ParseBool(args[2])
-	if err != nil {
-		return err
-	}
+	_p1, _ := strconv.ParseUint(args[0], 10 ,8)
+	p1 := uint8(_p1)
+	_p2, _ := strconv.ParseUint(args[1], 10, 8)
+	p2 := uint8(_p2)
 	
 	logger.Info(fmt.Sprintf("derive key %s", args[0]))
-	data, err := s.kCmdSet.ExportKey(derive, makeCurrent, onlyPublic, args[3])
+	data, err := s.kCmdSet.ExportKey(p1, p2, args[2])
 	// Data format:
 	// [ 0xA1, 0x?, 0x80/81, 0x?, <payload> ]
 	// Alex: I'm not sure what bytes 1 and 3 are. They are 0x43 and 0x41, respectively,
@@ -640,15 +683,31 @@ func (s *Shell) commandKeycardExportKey(args ...string) error {
 	}
 	if data[2] == 0x80 {
 		// Public Key
-		logger.Info(fmt.Sprintf("Exported Public Key: \n%x\n", data[4:]))
+		logger.Info(fmt.Sprintf("Exported Public Key: \n%x\n", data[4:4+65]))
 	} else {
 		// Key Pair
 		logger.Info(fmt.Sprintf("Exported Key Pair: \n%x\n", data[4:]))
 	}
+	if len(data) > (4+65) && data[4+65] == 0x82 {
+		logger.Info(fmt.Sprintf("Exported Chain Code: \n%x\n", data[4+67:]))
+	}
 
 	return nil
 }
-
+*/
+/*
+func (s *Shell) commandKeycardExportSeed(args ...string) error {
+	if err := s.requireArgs(args, 0); err != nil {
+		return err
+	}
+	data, err := s.kCmdSet.ExportSeed()
+	logger.Info(fmt.Sprintf("Exported Seed: \n%x\n", data))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+*/
 func (s *Shell) commandKeycardSign(args ...string) error {
 	if err := s.requireArgs(args, 1); err != nil {
 		return err
@@ -666,7 +725,7 @@ func (s *Shell) commandKeycardSign(args ...string) error {
 		logger.Error("sign failed", "error", err)
 		return err
 	}
-
+	logger.Info(fmt.Sprintf("signature %x", sig))
 	s.writeSignatureInfo(sig)
 
 	return nil
@@ -799,10 +858,10 @@ func (s *Shell) writeSignatureInfo(sig *types.Signature) {
 
 	address := crypto.PubkeyToAddress(*ecdsaPubKey)
 
-	s.write(fmt.Sprintf("SIGNATURE R: %x\n", sig.R()))
-	s.write(fmt.Sprintf("SIGNATURE S: %x\n", sig.S()))
-	s.write(fmt.Sprintf("SIGNATURE V: %x\n", sig.V()))
-	s.write(fmt.Sprintf("ETH SIGNATURE: 0x%x\n", ethSig))
-	s.write(fmt.Sprintf("PUBLIC KEY: 0x%x\n", sig.PubKey()))
-	s.write(fmt.Sprintf("ADDRESS: 0x%x\n\n", address))
+	logger.Info(fmt.Sprintf("SIGNATURE R: %x\n", sig.R()))
+	logger.Info(fmt.Sprintf("SIGNATURE S: %x\n", sig.S()))
+	logger.Info(fmt.Sprintf("SIGNATURE V: %x\n", sig.V()))
+	logger.Info(fmt.Sprintf("ETH SIGNATURE: 0x%x\n", ethSig))
+	logger.Info(fmt.Sprintf("PUBLIC KEY: 0x%x\n", sig.PubKey()))
+	logger.Info(fmt.Sprintf("ADDRESS: 0x%x\n\n", address))
 }

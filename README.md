@@ -115,15 +115,30 @@ If you don't get an error message, it means you are connected to the card! This 
 
 ### Wallets
 
-Once comms are established with the card, you should generate a keypair on the card if you haven't done so already:
+Once you have verified your PIN, you can create, import, and interact with your HD wallet. The keycard stores one seed (and thus one HD wallet) at a time.
+
+#### Generating a Key
+
+You can generate a key using the TRNG of the smartcard:
 
 ```
 > keycard-generate-key
 ```
 
-This will create a keypair that does not correspond to a mnemonic, so you cannot export it as a seed phrase. The generation utilizes the card's true random number generator.
+This will create and load a seed (and master keypair) that does not correspond to a mnemonic, so you cannot export it as a seed phrase. The generation utilizes the card's true random number generator.
 
-> The KeyCard applet does have the ability to import a key with a menomonic, but that isn't as secure as generating on the card. It is also not implemented in this CLI or in the Golang SDK yet.
+##### Importing a Key or Seed
+
+You can also import a seed or key:
+
+```
+> keycard-load-key <isSeed> <isExtended> <data>
+```
+
+If `isSeed=1`, your `data` should be a 64-byte hex string representing the master seed for the HD wallet you are creating.
+
+> See `status-keycard` docs for formatting when `isSeed=0`. You should be including a keypair with an optional chaincode to indicate whether it is an extended keypair (`isExtended=1` for extended keypair imports). Importing keys directly is generally not recommended, as the data is less compact.
+
 
 #### Setting a "Current" Key
 
@@ -143,22 +158,69 @@ You can export both public and private keys based on a derivation path (or witho
 
 > Public keys can always be exported, but private keys have some restrictions, which you can read about [here].
 
-When exporting a key, you have three parameters to specify:
+When exporting a key, you have two parameters (`p1` and `p2`) to specify:
 
-* `derive` - if false, the card will just return the current key. This means you must have derived (i.e. made current) the key ahead of time
-* `makeCurrent` - if true, the card will make the derived key "current" before returning it
-* `onlyPublic` - If true, only return the f false, return the private and public key (again, there are restrictions)
-* `path` - Derivation path
+* `p1` - Derivation options
+* `p2` - Type of data export
+
+**`p1`**
+|  Option    |   Description            |
+|:-----------|:-------------------------|
+| `0`     | Export Current Key       |
+| `1`     | Derive                   |
+| `2`     | Derive and make current key |
+
+**`p2`**
+
+|  Option    |   Description                          |
+|:-----------|:---------------------------------------|
+| `0`        | Export public AND private key          |
+| `1`        | Export public key                      |
+| `2`        | Export public key and chaincode        |
+
+
+> **IMPORTANT NOTE**: GridPlus has disabled private key exports, while status does not allow chaincode exports
 
 Example:
 
 ```
-> keycard-export-key 1 0 0 m/44'/0'/0'/0/0
+> keycard-export-key 2 2 m/44'/0'/0'/0/0
 
-<RESPONSE_KEY>
+Exorted Public Key: <PUB_KEY>
+Exported Chain Code: <CHAIN_CODE>
 ```
 
-Where `RESPONSE_KEY` is an EC public key on the secp256k1 curve in uncompressed point format, i.e. `04{X-component}{Y-component}`.
+> All public keys are build on the secp256k1 curve and exported in uncompressed point format, i.e. `04{X-component}{Y-component}`.
+
+#### Master Seed
+
+The `masterSeed` contains the root entropy of the HD wallet. The seed may be exported if it is created/imported using an appropriate flag.
+
+> A `flag` is a one-byte value. Currently the only allowable valures are 0 (non-exportable seed) and 1 (exportable seed), but more options may be added in the future.
+
+**Generating a seed:**
+
+```
+> keycard-generate-key <flag>
+```
+
+If the second argument is not provided, this will generate a `masterSeed` which is *not* exportable. You may designate the seed as exportable with `keycard-generate-key 1`.
+
+**Importing a Seed:**
+
+```
+> keycard-load-key 3 <flag> <seed>
+```
+
+Here the `3` indicates that we are loading a seed (64 byte hex string). The `flag` is the same as for generating: 1=exportable, 0=non-exportable.
+
+**Exporting seed:**
+
+You can export the master seed (if it is exportable) with the following command:
+
+```
+> keycard-export-seed
+```
 
 #### Signing
 

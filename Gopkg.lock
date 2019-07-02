@@ -43,7 +43,7 @@
 [[projects]]
   branch = "develop"
   digest = "1:2758b9d1b36ce6d9dbdb00be76e850d290ec51ac994a12ed6f9a5569c9d5f41c"
-  name = "github.com/status-im/keycard-go"
+  name = "github.com/alex-miller-0/keycard-go"
   packages = [
     ".",
     "apdu",
@@ -103,13 +103,13 @@
     "github.com/ebfe/scard",
     "github.com/ethereum/go-ethereum/crypto",
     "github.com/ethereum/go-ethereum/log",
-    "github.com/status-im/keycard-go",
-    "github.com/status-im/keycard-go/apdu",
-    "github.com/status-im/keycard-go/globalplatform",
-    "github.com/status-im/keycard-go/hexutils",
-    "github.com/status-im/keycard-go/identifiers",
-    "github.com/status-im/keycard-go/io",
-    "github.com/status-im/keycard-go/types",
+    "github.com/alex-miller-0/keycard-go",
+    "github.com/alex-miller-0/keycard-go/apdu",
+    "github.com/alex-miller-0/keycard-go/globalplatform",
+    "github.com/alex-miller-0/keycard-go/hexutils",
+    "github.com/alex-miller-0/keycard-go/identifiers",
+    "github.com/alex-miller-0/keycard-go/io",
+    "github.com/alex-miller-0/keycard-go/types",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

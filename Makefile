@@ -9,7 +9,7 @@ BIN_NAME=keycard
 
 VERSION = $(shell cat VERSION)
 
-export GITHUB_USER ?= status-im
+export GITHUB_USER ?= alex-miller-0
 export GITHUB_REPO ?= $(PROJECT_NAME)
 
 export IMAGE_TAG   ?= latest
@@ -20,7 +20,7 @@ export GO_PROJECT_PATH ?= github.com/$(GITHUB_USER)/$(GITHUB_REPO)
 deps:
 	go get github.com/karalabe/xgo
 	go get github.com/aktau/github-release
-	go get github.com/status-im/keycard-go
+	go get github.com/alex-miller-0/keycard-go
 
 build:
 	go build -i -o $(GOBIN)/$(BIN_NAME) -v .
