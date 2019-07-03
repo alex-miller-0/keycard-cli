@@ -21,9 +21,10 @@ func NewCertifier(t io.Transmitter) *Certifier {
 func (c *Certifier) GetId() ([]byte, error) {
 	// Send some random data to `authenticate` and get a signature template back
 	cmdSet := keycard.NewCommandSet(c.c)
+	
 	challenge := make([]byte, 32)
 	rand.Read(challenge)
-	data, err := cmdSet.GenericCommand(0xEE, 0x00, 0x00, challenge)
+	data, err := cmdSet.GenericCommand(0x00, 0xEE, 0x00, 0x00, challenge)
 	if err != nil {
 		return nil, err
 	}
@@ -37,14 +38,14 @@ func (c *Certifier) GetId() ([]byte, error) {
 // Put a signature onto the card which contains the certs
 func (c *Certifier) PutCert(cert []byte) (error) {
 	cmdSet := keycard.NewCommandSet(c.c)
-	_, err := cmdSet.GenericCommand(0xFA, 0x00, 0x00, cert)
+	_, err := cmdSet.GenericCommand(0x80, 0xFA, 0x00, 0x00, cert)
 	return err
 }
 
 // Get the cert from the card
 func (c *Certifier) GetCert() ([]byte, error) {
 	cmdSet := keycard.NewCommandSet(c.c)
-	data, err := cmdSet.GenericCommand(0xFB, 0x00, 0x00, []byte{})
+	data, err := cmdSet.GenericCommand(0x80, 0xFB, 0x00, 0x00, []byte{})
 	if err != nil {
 		return nil, err
 	}

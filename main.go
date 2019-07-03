@@ -257,8 +257,6 @@ func commandInfo(card *scard.Card) error {
 }
 
 func commandGetId(card *scard.Card) error {
-	fmt.Printf("len(os.args) %d\n", len(os.Args))
-	fmt.Printf("arg %s\n", os.Args[len(os.Args) - 1])
 	c := NewCertifier(card)
 	idPub, err := c.GetId()
 	if err != nil {
@@ -280,19 +278,32 @@ func commandCertify(card *scard.Card) error {
 		// This must be an [r,s] ECDSA signature
 		return errors.New("Your cert must be a 64 byte hex string")
 	}
-	fmt.Printf("Putting cert %v\n", cert)
-	// Push cert to card
 	c := NewCertifier(card)
+
+
+	fmt.Printf("Getting cert\n")
+	loadedCert, err := c.GetCert()
+	if err != nil {
+		fmt.Printf("Could not get cert\n")
+		return err
+	}
+	fmt.Printf("Got cert: %v\n", loadedCert)
+
+	// Push cert to card
+	fmt.Printf("Putting cert %v\n", cert);
 	err = c.PutCert(cert)
 	if err != nil {
 		return err
 	}
+	
 	// Ensure the cert was loaded
+	fmt.Printf("Getting cert\n")
 	data, err := c.GetCert()
+	fmt.Printf("Got cert: %v\n", data)
 	if err != nil {
 		return err
-	} else if !bytes.Equal(data, cert) {
-		return errors.New("Cert not propertly loaded to card")
+		} else if !bytes.Equal(data[2:], cert) {
+			return errors.New("Cert not propertly loaded to card")
 	}
 
 	return nil
