@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"flag"
@@ -47,6 +48,8 @@ func initLogger() {
 
 func init() {
 	commands = map[string]commandFunc{
+		"get-id":  commandGetId,
+		"certify": commandCertify,
 		"version": commandVersion,
 		"install": commandInstall,
 		"info":    commandInfo,
@@ -238,6 +241,7 @@ func commandInfo(card *scard.Card) error {
 
 	fmt.Printf("Installed: %+v\n", info.Installed)
 	fmt.Printf("Initialized: %+v\n", info.Initialized)
+	fmt.Printf("Seed Exportable: %+v\n", info.SeedExportable)
 	fmt.Printf("InstanceUID: 0x%x\n", info.InstanceUID)
 	fmt.Printf("SecureChannelPublicKey: 0x%x\n", info.SecureChannelPublicKey)
 	fmt.Printf("Version: 0x%x\n", info.Version)
@@ -248,6 +252,64 @@ func commandInfo(card *scard.Card) error {
 	fmt.Printf("  Key management:%v\n", info.HasKeyManagementCapability())
 	fmt.Printf("  Credentials Management:%v\n", info.HasCredentialsManagementCapability())
 	fmt.Printf("  NDEF:%v\n", info.HasNDEFCapability())
+
+	return nil
+}
+
+func commandGetId(card *scard.Card) error {
+	c := NewCertifier(card)
+	err := c.Select()
+	if err != nil {
+		return err
+	}
+	idPub, err := c.GetId()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%x", idPub)
+	return nil
+}
+
+func commandCertify(card *scard.Card) error {
+	if len(os.Args) < 3 {
+		fmt.Printf("You must provide a cert")
+		return nil
+	}
+	cert, err := hex.DecodeString(os.Args[len(os.Args) - 1])
+	if err != nil {
+		fmt.Printf("Error decoding argument")
+		return nil
+	}
+	c := NewCertifier(card)
+	err = c.Select()
+	if err != nil {
+		fmt.Printf("Error selecting applet")
+		return nil
+	}
+
+	// Push cert to card
+	err = c.PutCert(cert)
+	if err != nil {
+		fmt.Printf("Error loading cert")
+		return nil
+	}
+
+	// Ensure the cert was loaded
+	data, err := c.GetCert()
+	if err != nil {
+		fmt.Printf("Error validating loaded cert")
+		return nil
+	} 
+	
+	// Ensure the cert was correct
+	L := data[3]
+	// fmt.Println("cert", cert)
+	// fmt.Println("data[2:2+l]", data[2:4+L])
+	if !bytes.Equal(data[2:4+L], cert) {
+		fmt.Printf("Cert not propertly loaded to card")
+		return nil
+	}
 
 	return nil
 }
