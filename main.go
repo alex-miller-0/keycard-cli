@@ -258,52 +258,57 @@ func commandInfo(card *scard.Card) error {
 
 func commandGetId(card *scard.Card) error {
 	c := NewCertifier(card)
+	err := c.Select()
+	if err != nil {
+		return err
+	}
 	idPub, err := c.GetId()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Card ID (PubKey): %x\n", idPub)
+	fmt.Printf("%x", idPub)
 	return nil
 }
 
 func commandCertify(card *scard.Card) error {
 	if len(os.Args) < 3 {
-		return errors.New("You must provide a cert")
+		fmt.Printf("You must provide a cert")
+		return nil
 	}
 	cert, err := hex.DecodeString(os.Args[len(os.Args) - 1])
 	if err != nil {
-		return err
-	} else if len(cert) != 64 {
-		// This must be an [r,s] ECDSA signature
-		return errors.New("Your cert must be a 64 byte hex string")
+		fmt.Printf("Error decoding argument")
+		return nil
 	}
 	c := NewCertifier(card)
-
-
-	fmt.Printf("Getting cert\n")
-	loadedCert, err := c.GetCert()
+	err = c.Select()
 	if err != nil {
-		fmt.Printf("Could not get cert\n")
-		return err
+		fmt.Printf("Error selecting applet")
+		return nil
 	}
-	fmt.Printf("Got cert: %v\n", loadedCert)
 
 	// Push cert to card
-	fmt.Printf("Putting cert %v\n", cert);
 	err = c.PutCert(cert)
 	if err != nil {
-		return err
+		fmt.Printf("Error loading cert")
+		return nil
 	}
-	
+
 	// Ensure the cert was loaded
-	fmt.Printf("Getting cert\n")
 	data, err := c.GetCert()
-	fmt.Printf("Got cert: %v\n", data)
 	if err != nil {
-		return err
-		} else if !bytes.Equal(data[2:], cert) {
-			return errors.New("Cert not propertly loaded to card")
+		fmt.Printf("Error validating loaded cert")
+		return nil
+	} 
+	
+	// Ensure the cert was correct
+	L := data[3]
+	// fmt.Println("cert", cert)
+	// fmt.Println("data[2:2+l]", data[2:4+L])
+	if !bytes.Equal(data[2:4+L], cert) {
+		fmt.Printf("Cert not propertly loaded to card")
+		return nil
 	}
 
 	return nil

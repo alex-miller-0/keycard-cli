@@ -27,6 +27,11 @@ build:
 	@echo "Compilation done."
 	@echo "Run \"./build/bin/$(BIN_NAME) -h\" to view available commands."
 
+build-linux:
+	GOOS=linux GOARCH=amd64 go build -i -o $(GOBIN)/$(BIN_NAME)-linux -v .
+	@echo "Compilation done."
+	@echo "Run \"./build/bin/$(BIN_NAME) -h\" to view available commands."
+
 test:
 	go test -v ./...
 
